@@ -17,6 +17,7 @@
     "@remix-run/react": "^2.2.0",
     "@remix-run/serve": "^2.2.0",
     "@supabase/supabase-js": "^2.38.4",
+    "@vercel/remix": "^2.2.0",
     "dayjs": "^1.11.10",
     "isbot": "^3.6.8",
     "react": "^18.2.0",
