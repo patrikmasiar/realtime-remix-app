@@ -2,7 +2,7 @@ import Chat from '../Chat'
 import stylesheet from "../tailwind.css";
 import type {LinksFunction} from "@remix-run/node";
 import Login from '../Login'
-import AppContextProvider, { useAppContext } from "../context";
+import AppContextProvider, { useAppContext } from "~/context";
 
 
 export const links: LinksFunction = () => [
