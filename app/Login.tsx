@@ -36,7 +36,9 @@ export default function Example({onSubmit}: {onSubmit: (user: string) => void}) 
               <button
                 type="button"
                 disabled={name.length === 0}
-                onClick={() => onSubmit(name)}
+                onClick={() => {
+                  onSubmit(name)
+                }}
                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 Continue
