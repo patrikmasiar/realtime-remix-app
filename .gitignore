@@ -6,5 +6,3 @@ node_modules
 .env
 
 .idea
-
-/app/config.ts
