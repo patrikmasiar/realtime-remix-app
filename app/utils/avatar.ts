@@ -1,4 +1,4 @@
-import AppConfig from "~/config";
+import AppConfig from "../config";
 
 export const getRandomAvatarUrl = () => {
   const seeds = ['Jack', 'Missy', 'Muffin', 'Bear', 'Maggie', 'Sasha', 'Chloe', 'Garfield', 'Bubba', 'Zoe', 'Buddy', 'Zoey', 'Sugar', 'Cali', 'Molly', 'Boots', 'Lucky', 'Baby', 'Pepper']

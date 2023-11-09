@@ -1,10 +1,10 @@
 import type { FC} from "react";
 import {createContext, useContext, useState} from "react";
 import { v4 as uuidv4 } from 'uuid';
-import { supabaseClient as supabase } from "~/utils/supabase";
-import type {Message, User} from "~/types";
-import AppConfig from "~/config";
-import {getRandomAvatarUrl} from '~/utils/avatar';
+import { supabaseClient as supabase } from "../utils/supabase";
+import type {Message, User} from "../types";
+import AppConfig from "../config";
+import {getRandomAvatarUrl} from '../utils/avatar';
 
 const AppContext = createContext<{
   loading: boolean;
@@ -81,6 +81,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       .channel('channel-a')
       .on('postgres_changes', {event: '*', schema: 'public', table: 'messages'}, payload => {
         if (Object.keys(payload.new).length > 0){
+          // @ts-ignore
           setUniqueMessages(payload.new)
         }
       })
@@ -90,8 +91,10 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       .channel('channel-b')
       .on('postgres_changes', {event: '*', schema: 'public', table: 'users'}, payload => {
         if (Object.keys(payload.new).length > 0){
+          // @ts-ignore
           setUniqueUsers(payload.new)
         } else {
+          // @ts-ignore
           setUsers(prev => prev.filter(u => u.id !== payload.old.id))
         }
       })
