@@ -23,7 +23,7 @@ const Playground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       const image = new Image()
-      image.src = `${user?.avatar}&size=60&radius=50` || ''
+      image.src = `${user?.avatar}&size=50&radius=50` || ''
       image.onload = () => {
         ctx.drawImage(image, x, y, 50, 50)
       }
@@ -60,7 +60,7 @@ const Playground = () => {
     }
 
 
-  }, []);
+  }, [user?.avatar]);
 
   return <canvas ref={canvasRef} />
 }
