@@ -5,6 +5,7 @@ import { supabaseClient as supabase } from "../utils/supabase";
 import type {Message, User} from "~/types";
 import {getRandomAvatarUrl} from '~/utils/avatar';
 import {useLocalUser} from "~/hooks/useLocalUser";
+import AppConfig from "~/config";
 
 const AppContext = createContext<{
   loading: boolean;
@@ -78,7 +79,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
 
   const subscribe = () => {
     supabase
-      .channel('channel-a')
+      .channel(AppConfig.MESSAGES_CHANNEL)
       .on('postgres_changes', {event: '*', schema: 'public', table: 'messages'}, payload => {
         if (Object.keys(payload.new).length > 0){
           // @ts-ignore
@@ -88,7 +89,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       .subscribe()
 
     supabase
-      .channel('channel-b')
+      .channel(AppConfig.USERS_CHANNEL)
       .on('postgres_changes', {event: '*', schema: 'public', table: 'users'}, payload => {
         if (Object.keys(payload.new).length > 0){
           // @ts-ignore
