@@ -12,8 +12,8 @@ const Playground = () => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = 400
-    canvas.height = 400
+    canvas.width = 700
+    canvas.height = 600
 
     let x = 100
     let y = 100
@@ -62,7 +62,7 @@ const Playground = () => {
 
   }, [user?.avatar]);
 
-  return <canvas ref={canvasRef} />
+  return <canvas className="bg-gray-400" ref={canvasRef} />
 }
 
 export default Playground
