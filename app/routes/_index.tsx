@@ -3,6 +3,7 @@ import stylesheet from "../tailwind.css";
 import type {LinksFunction} from "@remix-run/node";
 import Login from '../Login'
 import AppContextProvider, { useAppContext } from "~/context";
+import Playground from "~/Playground";
 
 
 export const links: LinksFunction = () => [
@@ -42,7 +43,9 @@ const App = () => {
         </header>
         <div className="mx-auto w-full max-w-7xl grow lg:flex xl:px-2">
           <div className="flex-1 xl:flex">
-            <div className="px-4 py-6 sm:px-6 xl:flex-1" />
+            <div className="px-4 py-6 sm:px-6 xl:flex-1">
+              <Playground />
+            </div>
           </div>
           <div className="shrink-0 border-t border-gray-200 px-4 py-6 sm:px-6 lg:w-96 lg:border-l lg:border-t-0 lg:pr-8 xl:pr-6">
             <Chat
