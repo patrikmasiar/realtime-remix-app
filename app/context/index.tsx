@@ -3,8 +3,8 @@ import {createContext, useContext, useState} from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { supabaseClient as supabase } from "../utils/supabase";
 import type {Message, User} from "~/types";
-import AppConfig from "~/config";
 import {getRandomAvatarUrl} from '~/utils/avatar';
+import {useLocalUser} from "~/hooks/useLocalUser";
 
 const AppContext = createContext<{
   loading: boolean;
@@ -26,9 +26,10 @@ const AppContext = createContext<{
 
 const AppContextProvider: FC<{ children: any }> = ({ children }) => {
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const { localUser, setLocalUser } = useLocalUser()
+
 
   const logout = () => {
     destroyUser()
@@ -69,10 +70,9 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
   }
 
   const destroyUser  = async () => {
-    if (user?.id) {
-      await supabase.from('users').delete().eq('local_id', user.local_id)
-      window.localStorage.removeItem(AppConfig.LOCAL_USER_ID_STORAGE_KEY)
-      setUser(null)
+    if (localUser?.local_id) {
+      await supabase.from('users').delete().eq('local_id', localUser.local_id)
+      setLocalUser(null)
     }
   }
 
@@ -103,12 +103,12 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
 
   const createMessage = async (message: string) => {
     try {
-      if (user) {
+      if (localUser) {
         const createMessage = await supabase.from('messages').insert([
           {
             text: message,
-            author_local_id: user.local_id,
-            author_name: user.name,
+            author_local_id: localUser.local_id,
+            author_name: localUser.name,
           }
         ])
 
@@ -136,20 +136,18 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
         return
       }
 
-      window.localStorage.setItem(AppConfig.LOCAL_USER_ID_STORAGE_KEY, localId)
-
       const userResponse = await supabase.from('users').select().eq('local_id', localId)
       const userData = userResponse?.data?.[0]
 
       if (userData) {
-        setUser(userData)
+        setLocalUser(userData)
       }
     } catch (error) {}
   }
 
   const login = async (name: string) => {
     await createUser(name);
-    loadInitialData();
+    await loadInitialData();
     subscribe();
   }
 
@@ -158,7 +156,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
   }
 
   return (
-    <AppContext.Provider value={{user, users, messages, submitMessage, logout, login, loading}}>
+    <AppContext.Provider value={{user: localUser, users, messages, submitMessage, logout, login, loading}}>
       {children}
     </AppContext.Provider>
   )
