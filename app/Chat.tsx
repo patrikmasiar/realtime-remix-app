@@ -1,4 +1,5 @@
 import {useState} from "react";
+import dayjs from "dayjs";
 
 export default function Example({ messages, onSubmit }: {messages: any[], onSubmit: (message: string) => void}) {
   const [messageValue, setMessageValue] = useState('')
@@ -15,7 +16,7 @@ export default function Example({ messages, onSubmit }: {messages: any[], onSubm
                     <span className="font-medium text-gray-900">{activityItem.author_name}</span>
                   </div>
                   <time dateTime={activityItem.created_at} className="flex-none py-0.5 text-xs leading-5 text-gray-500">
-                    {activityItem.created_at}
+                    {dayjs(activityItem.created_at).format('H:mm, MMMM D, YYYY')}
                   </time>
                 </div>
                 <p className="text-sm leading-6 text-gray-500">{activityItem.text}</p>
