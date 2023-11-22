@@ -1,6 +1,7 @@
 const AppConfig = {
   MESSAGES_CHANNEL: 'channel_messages',
   USERS_CHANNEL: 'channel_users',
+  CURSORS_CHANNEL: 'channel_cursors',
   AVATAR_API_URL: 'https://api.dicebear.com/7.x/bottts-neutral/svg',
   LOCAL_USER_STORAGE_KEY: 'local-user_game-chat',
   SUPABASE_URL: 'https://dcscoewwbxmgtsdgjmsb.supabase.co',

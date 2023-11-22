@@ -2,7 +2,7 @@ import type { FC} from "react";
 import {createContext, useContext, useState} from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { supabaseClient as supabase } from "../utils/supabase";
-import type {Message, User} from "~/types";
+import type {Message, User, Cursor} from "~/types";
 import {getRandomAvatarUrl} from '~/utils/avatar';
 import {useLocalUser} from "~/hooks/useLocalUser";
 import AppConfig from "~/config";
@@ -15,11 +15,13 @@ const AppContext = createContext<{
   login: (name: string) => void;
   logout: () => void;
   submitMessage: (message: string) => void;
+  cursors: Cursor[];
 }>({
   loading: false,
   user: null,
   users: [],
   messages: [],
+  cursors: [],
   login: () => {},
   logout: () => {},
   submitMessage: () => {},
@@ -28,6 +30,7 @@ const AppContext = createContext<{
 const AppContextProvider: FC<{ children: any }> = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [cursors, setCursors] = useState<Cursor[]>([])
   const [users, setUsers] = useState<User[]>([])
   const { localUser, setLocalUser } = useLocalUser()
 
@@ -40,9 +43,11 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
     setLoading(true)
     const { data: usersData } = await supabase.from('users').select()
     const { data: messagesData } = await supabase.from('messages').select()
+    const { data: cursorsData } = await supabase.from('cursor_positions').select();
 
     setMessages(messagesData as Message[])
     setUsers(usersData as User[])
+    setCursors(cursorsData as any[])
     setLoading(false)
   }
 
@@ -72,6 +77,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
 
   const destroyUser  = async () => {
     if (localUser?.local_id) {
+      await supabase.from('cursor_positions').delete().eq('user_id', localUser.id)
       await supabase.from('users').delete().eq('local_id', localUser.local_id)
       setLocalUser(null)
     }
@@ -100,6 +106,27 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
         }
       })
       .subscribe()
+
+    supabase.channel(AppConfig.CURSORS_CHANNEL)
+      .on('postgres_changes', {event: '*', schema: 'public', table: 'cursor_positions'}, payload => {
+        if (Object.keys(payload.new).length > 0){
+          // @ts-ignore
+          setCursors(prev => {
+            const prevCursorsIds = Array.from(new Set(prev.map(c => c.id))).filter(i => !!i)
+
+            // @ts-ignore
+            if (prevCursorsIds.includes(payload.new.id)) {
+              // @ts-ignore
+              return prev.map(c => c.id === payload.new.id ? payload.new : c)
+            }
+
+            return [...prev, payload.new]
+          })
+        } else {
+          // @ts-ignore
+          setCursors(prev => prev.filter(c => c.id !== payload.old.id))
+        }
+      }).subscribe()
   }
 
   const createMessage = async (message: string) => {
@@ -141,6 +168,10 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       const userData = userResponse?.data?.[0]
 
       if (userData) {
+        await supabase
+          .from('cursor_positions')
+          .insert({ x: 0, y: 0, user_id: userData.id })
+
         setLocalUser(userData)
       }
     } catch (error) {}
@@ -157,7 +188,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
   }
 
   return (
-    <AppContext.Provider value={{user: localUser, users, messages, submitMessage, logout, login, loading}}>
+    <AppContext.Provider value={{user: localUser, users, cursors, messages, submitMessage, logout, login, loading}}>
       {children}
     </AppContext.Provider>
   )

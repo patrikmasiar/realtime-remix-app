@@ -13,3 +13,10 @@ export type Message = {
   author_local_id: string;
   author_name: string;
 }
+
+export type Cursor = {
+  id: number;
+  user_id: string;
+  x: number;
+  y: number;
+}
