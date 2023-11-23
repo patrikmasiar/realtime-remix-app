@@ -12,7 +12,7 @@ const AppContext = createContext<{
   user: User | null;
   users: User[];
   messages: Message[];
-  login: (name: string) => void;
+  login: (data: {name: string; roomName: string}) => void;
   logout: () => void;
   submitMessage: (message: string) => void;
   cursors: Cursor[];
@@ -43,11 +43,9 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
     setLoading(true)
     const { data: usersData } = await supabase.from('users').select()
     const { data: messagesData } = await supabase.from('messages').select()
-    const { data: cursorsData } = await supabase.from('cursor_positions').select();
 
     setMessages(messagesData as Message[])
     setUsers(usersData as User[])
-    setCursors(cursorsData as any[])
     setLoading(false)
   }
 
@@ -77,16 +75,16 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
 
   const destroyUser  = async () => {
     if (localUser?.local_id) {
-      await supabase.from('cursor_positions').delete().eq('user_id', localUser.id)
+      setCursors(prev => prev.filter(c => c.userId !== localUser?.id))
       await supabase.from('users').delete().eq('local_id', localUser.local_id)
       setLocalUser(null)
     }
   }
 
-  const subscribe = () => {
+  const subscribe = (channel: string) => {
     supabase
-      .channel(AppConfig.MESSAGES_CHANNEL)
-      .on('postgres_changes', {event: '*', schema: 'public', table: 'messages'}, payload => {
+      .channel(`${AppConfig.MESSAGES_CHANNEL}-${channel}`)
+      .on('postgres_changes', {event: '*', schema: 'public', table: 'messages' }, payload => {
         if (Object.keys(payload.new).length > 0){
           // @ts-ignore
           setUniqueMessages(payload.new)
@@ -95,7 +93,7 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       .subscribe()
 
     supabase
-      .channel(AppConfig.USERS_CHANNEL)
+      .channel(`${AppConfig.USERS_CHANNEL}-${channel}`)
       .on('postgres_changes', {event: '*', schema: 'public', table: 'users'}, payload => {
         if (Object.keys(payload.new).length > 0){
           // @ts-ignore
@@ -106,27 +104,6 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
         }
       })
       .subscribe()
-
-    supabase.channel(AppConfig.CURSORS_CHANNEL)
-      .on('postgres_changes', {event: '*', schema: 'public', table: 'cursor_positions'}, payload => {
-        if (Object.keys(payload.new).length > 0){
-          // @ts-ignore
-          setCursors(prev => {
-            const prevCursorsIds = Array.from(new Set(prev.map(c => c.id))).filter(i => !!i)
-
-            // @ts-ignore
-            if (prevCursorsIds.includes(payload.new.id)) {
-              // @ts-ignore
-              return prev.map(c => c.id === payload.new.id ? payload.new : c)
-            }
-
-            return [...prev, payload.new]
-          })
-        } else {
-          // @ts-ignore
-          setCursors(prev => prev.filter(c => c.id !== payload.old.id))
-        }
-      }).subscribe()
   }
 
   const createMessage = async (message: string) => {
@@ -168,19 +145,39 @@ const AppContextProvider: FC<{ children: any }> = ({ children }) => {
       const userData = userResponse?.data?.[0]
 
       if (userData) {
-        await supabase
-          .from('cursor_positions')
-          .insert({ x: 0, y: 0, user_id: userData.id })
-
         setLocalUser(userData)
+
+        supabase.channel(AppConfig.CURSORS_CHANNEL)
+          .on(
+            'broadcast',
+            { event: 'cursor' },
+            // @ts-ignore
+            ({ payload }) => {
+              if (payload.userId !== userData?.id) {
+                  setCursors(prev => {
+                    // @ts-ignore
+                    const prevCursorsIds = Array.from(new Set(prev.map(c => c.userId))).filter(i => !!i)
+
+                    // @ts-ignore
+                    if (prevCursorsIds.includes(payload.userId)) {
+                      // @ts-ignore
+                      return prev.map(c => c.userId === payload.userId ? payload : c)
+                    }
+
+                    return [...prev, payload]
+                  })
+              }
+            }
+          )
+          .subscribe()
       }
     } catch (error) {}
   }
 
-  const login = async (name: string) => {
-    await createUser(name);
+  const login = async (data: { name: string; roomName: string }) => {
+    await createUser(data.name);
     await loadInitialData();
-    subscribe();
+    subscribe(data.roomName);
   }
 
   const submitMessage = (message: string) => {

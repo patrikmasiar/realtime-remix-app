@@ -1,7 +1,8 @@
 import type {FC} from 'react';
 import React, { useEffect, useState} from 'react';
 import { supabaseClient as supabase } from './utils/supabase';
-import type {User} from "~/types";
+import type {Cursor, User} from "~/types";
+import AppConfig from "~/config";
 
 const UserCursorLabel: FC<{ position: {x: number; y: number}; user: User }> = ({ user, position }) => {
   return (
@@ -41,17 +42,15 @@ const UserCursorLabel2: FC<{ position: {x: number; y: number}; user: User }> = (
   )
 }
 
-const Playground: FC<{user: User, data: any, users: User[]}> = ({ user, data, users }) => {
+const Playground: FC<{user: User, data: Cursor[], users: User[]}> = ({ user, data, users }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const updateCursorPosition = async (x: number, y: number) => {
-    try {
-      await supabase
-        .from('cursor_positions')
-        .update({ x, y })
-        .eq('user_id', user.id);
-
-    } catch (error) {}
+    return supabase.channel(AppConfig.CURSORS_CHANNEL).send({
+      type: 'broadcast',
+      event: 'cursor',
+      payload: { userId: user.id, x, y }
+    })
   };
 
 
@@ -71,8 +70,8 @@ const Playground: FC<{user: User, data: any, users: User[]}> = ({ user, data, us
   }, []);
 
   const renderCursors = () => {
-    return data.filter((cursor: any) => Number(cursor.user_id) !== user.id).map((cursor: any) => (
-      <UserCursorLabel2 key={cursor.user_id} position={cursor} user={users.find(user => user.id === Number(cursor.user_id))} />
+    return data.filter((cursor: any) => cursor.userId !== user.id).map((cursor: any) => (
+      <UserCursorLabel2 key={cursor.userId} position={cursor} user={users.find(user => user.id === cursor.userId)} />
     ));
   };
 

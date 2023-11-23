@@ -15,8 +15,7 @@ export type Message = {
 }
 
 export type Cursor = {
-  id: number;
-  user_id: string;
+  userId: number;
   x: number;
   y: number;
 }
